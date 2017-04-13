@@ -307,12 +307,7 @@ function generateCoins(level) {
         console.log(level[i]+ "!!!!!" + i);
         for(var j = 0; j < level[i].length; j++) {
             if(level[i][j] == '') {
-                var willBeGenerated = true;
-                for(var k = 0; k < Math.pow(8 - Math.ceil(stage/10), 2);k++){
-                    willBeGenerated = Math.floor(Math.random()*2) && willBeGenerated;
-                }
-                console.log(Math.floor(Math.random()*2));
-                if(Math.floor(Math.random()*2) && Math.floor(Math.random()*2))
+                if(Math.floor(Math.random()*(16/Math.ceil(stage/10))) == 4)
                     level[i][j] = 'c';
             }
         }
