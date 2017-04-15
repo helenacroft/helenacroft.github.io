@@ -1,14 +1,13 @@
 var mainState = {
 
     preload: function() {
-        game.load.image('background', 'assets/background_1.png');
-        game.load.image('player', 'assets/player.png');
-        // game.load.spritesheet('player', 'assets/playerSheet.png', 45, 45, 25);
+        game.load.image('background', 'assets/background_1.png');     
+        game.load.spritesheet('player', 'assets/player_spritesheet.png', 150, 207, 6);
         game.load.image('ground', 'assets/grass.png');
+        game.load.spritesheet('enemy1', 'assets/enemy_spritesheet.png', 120, 159, 4);
         game.load.image('platform', 'assets/grass.png');
-        game.load.image('coin', 'assets/coin.png');
-        game.load.image('wall', 'assets/grass.png');
-        game.load.image('spider', 'assets/enemy.png');
+        game.load.spritesheet('coin', 'assets/coin_spritesheet.png',84, 84, 6);
+        game.load.image('wall', 'assets/grass.png');    
         game.load.image('carrot', 'assets/carrot.png');
         game.load.image('bullet', 'assets/bullet.png');
         game.load.image('grass', 'assets/grass_brown.png');
@@ -72,8 +71,12 @@ var mainState = {
 
         }
 
-        this.player = game.add.sprite(40,game.world.height - 80, 'player');
-
+        this.player = game.add.sprite(40 ,game.world.height - 80, 'player');
+        this.player.animations.add('stand', [2]);
+        this.player.animations.add('walk', [4, 5], 8, true); // 8fps looped
+        this.player.animations.add('jump', [1]);
+        this.player.animations.add('fall', [0]);
+        this.player.animations.play('stand');
         this.player.scale.setTo(0.15,0.15);
         this.player.anchor.set(0.5, 0);
         this.player.body.collideWorldBounds = true;
@@ -128,10 +131,40 @@ var mainState = {
         game.physics.arcade.collide(this.player, this.enemies, this.enemyCoollision, null, this);
         game.physics.arcade.collide(this.player, this.coins, this.collectCoin);
         game.physics.arcade.collide(this.enemies, this.ground);
-        game.physics.arcade.collide(this.enemies, this.platforms);
-        game.physics.arcade.collide(this.enemies, this.platforms);
+        game.physics.arcade.collide(this.enemies, this.platforms);      
         game.physics.arcade.collide(this.enemies, this.walls);
         game.physics.arcade.collide(this.player, this.key, this.keyCollision, null, this);
+        
+        
+         if (this.player.body.velocity.x < 0) {
+            this.player.scale.x = -0.15;
+        }
+        else if (this.player.body.velocity.x > 0) {
+            this.player.scale.x = 0.15;
+        }
+        
+        this.enemies.forEach(function(item){
+            if (item.body.velocity.x < 0) {
+            item.scale.x = -0.2;
+        }
+        else if (item.body.velocity.x > 0) {
+            item.scale.x = 0.2;
+        }
+            
+        });
+         
+    
+        
+        if (this.player.body.velocity.y < 0) {
+            this.player.animations.play('jump');        
+        } else if (this.player.body.velocity.y >= 0 && !this.player.body.touching.down) {
+            this.player.animations.play('fall');
+        } else if (this.player.body.velocity.x !== 0 && this.player.body.touching.down) {
+            this.player.animations.play( 'walk');
+        } else {
+            this.player.animations.play('stand');
+        }
+        
         if(playerHasKey) game.physics.arcade.collide(this.player, this.closedDoor, this.doorCollision, null, this);
         game.physics.arcade.overlap(this.bullets, this.enemies, this.collisionHandler, null, this);
         if (this.cursor.left.isDown) {
@@ -154,13 +187,14 @@ var mainState = {
         if(!playerHasKey) return;
         console.log(door);
         door.kill();
-        this.openDoor.visible = true;
-        setTimeout(function(){
-            player.body.immovable = true;
+        this.openDoor.visible = true;       
+        player.body.velocity.x = 0;
+        player.body.enable = false;
+        setTimeout(function() { 
             player.kill();
             stage++;
             this.restartGame();           
-        },1000);
+        },500);
     },
     keyCollision: function(player,key) {
         key.kill();
@@ -195,6 +229,12 @@ var mainState = {
         coin.kill();
         score += 1;
         scoreText.text = scoreString + score;
+        if(score > 10 && shoots <= 8) {          
+            shoots+=2;
+            shootsText.text = shootsString + shoots;
+            score-=10;            
+        } 
+        scoreText.text = scoreString + score;
     },
     enemyCoollision: function(player, enemy) {
         if(player.body.velocity.y > 0) {
@@ -215,8 +255,9 @@ var mainState = {
 
 // Initialize the game and start our state
 var game = new Phaser.Game(800, 640);
+game.state.add('menu', menu);
 game.state.add('main', mainState);
-game.state.start('main');
+game.state.start('menu');
 
 var score = 0;
 var stage = 1;
@@ -404,10 +445,12 @@ function createWall(i,j) {
     return wall;
 }
 function createEnemy(i,j) {
-    var enemy = game.add.sprite(0 + j * 40, game.world.height - i*40 - 40, 'spider');
+    var enemy = game.add.sprite(0 + j * 40, game.world.height - i*40 - 40, 'enemy1');
+    enemy.animations.add('walk', [2,3], 6, true);  
+    enemy.animations.play('walk');   
     enemy.anchor.set(0, -0.2);
     enemy.scale.setTo(0.2,0.2);
-    enemy.body.velocity.x = 50;
+    enemy.body.velocity.x = 30;
     enemy.body.collideWorldBounds = true;
     enemy.checkWorldBounds = true;
     enemy.body.bounce.set(1);
@@ -415,6 +458,8 @@ function createEnemy(i,j) {
 }
 function createCoin(i,j) {
     var coin = game.add.sprite(0 + j * 40, game.world.height - i*40 - 40, 'coin');
+    coin.animations.add('rotate', [0, 1, 2, 3 ,4, 5 ,0], 6);  
+    coin.animations.play('rotate', 6, true);
     coin.anchor.set(-0.6, -1);
     coin.scale.setTo(0.2,0.2);
     return coin;
