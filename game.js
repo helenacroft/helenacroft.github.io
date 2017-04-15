@@ -246,6 +246,7 @@ var mainState = {
             if (life) {
                 life.kill();
             }
+            lifes--;
             restartGame();
         }
 
@@ -277,8 +278,7 @@ function restartGame() {
         shoots = 10;
         lifes = 3;
         playerHasKey = false;
-    } else {
-        lifes--;
+    } else {       
         playerHasKey = false;
     }
     game.state.restart();
@@ -361,7 +361,6 @@ function generateCoins(level) {
 
 function generatePlatforms(level) {
     var platforms = {};
-
     var platromsRows = [ [], [], [], [] ];
     for(var i = 0; i < 4 ; i++ ) {
         platforms[i] = [];
